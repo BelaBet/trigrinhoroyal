@@ -8,6 +8,7 @@ import type {
   LedgerEntryDto,
   LoginInput,
   MinesGameStateDto,
+  NotificationDto,
   PlaceBetInput,
   SignUpInput,
   StartBlackjackInput,
@@ -73,6 +74,11 @@ export const api = {
     request<BlackjackGameStateDto>("/games/blackjack/start", { method: "POST", body: JSON.stringify(input) }, token),
   blackjackAction: (token: string, betId: string, action: "hit" | "double" | "stand") =>
     request<BlackjackGameStateDto>(`/games/blackjack/${betId}/${action}`, { method: "POST" }, token),
+  notifications: (token: string) => request<NotificationDto[]>("/notifications", {}, token),
+  markNotificationRead: (token: string, id: string) =>
+    request<void>(`/notifications/${id}/read`, { method: "POST" }, token),
+  markAllNotificationsRead: (token: string) =>
+    request<void>("/notifications/read-all", { method: "POST" }, token),
 };
 
 export { ApiError };

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppShell } from "@/components/app-shell";
-import { CardsIcon, CirclesIcon, GemIcon, RocketIcon, SlotIcon, WheelIcon } from "@/components/icons";
+import { CardsIcon, CirclesIcon, GemIcon, RocketIcon, SearchIcon, SlotIcon, WheelIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import type { GameSummaryDto } from "@bet-platform/shared";
 
@@ -41,14 +42,20 @@ function gameHref(game: GameSummaryDto): string {
 }
 
 function CassinoContent() {
+  const searchParams = useSearchParams();
   const [games, setGames] = useState<GameSummaryDto[] | null>(null);
   const [category, setCategory] = useState("ALL");
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
   useEffect(() => {
     api.games().then(setGames).catch(() => setGames([]));
   }, []);
 
-  const filtered = (games ?? []).filter((g) => category === "ALL" || g.type === category);
+  const filtered = (games ?? []).filter(
+    (g) =>
+      (category === "ALL" || g.type === category) &&
+      g.name.toLowerCase().includes(query.trim().toLowerCase()),
+  );
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -60,7 +67,17 @@ function CassinoContent() {
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-5 flex items-center gap-2 rounded-sm border border-border-strong bg-surface px-3.5 py-2">
+        <SearchIcon className="h-4 w-4 text-ink-faint" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nome do jogo…"
+          className="w-full bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
+        />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value}

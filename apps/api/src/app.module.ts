@@ -12,6 +12,7 @@ import { BettingModule } from "./betting/betting.module";
 import { PaymentsModule } from "./payments/payments.module";
 import { MinesModule } from "./mines/mines.module";
 import { BlackjackModule } from "./blackjack/blackjack.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { BlackjackModule } from "./blackjack/blackjack.module";
     PaymentsModule,
     MinesModule,
     BlackjackModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })

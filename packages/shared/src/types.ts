@@ -105,6 +105,15 @@ export interface DepositInput {
   amount: number;
 }
 
+export interface NotificationDto {
+  id: string;
+  type: string;
+  title: string;
+  body?: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 /**
  * Mines é o único jogo com decisão incremental (revelar célula a célula e
  * escolher continuar ou retirar) — por isso tem um fluxo próprio de várias

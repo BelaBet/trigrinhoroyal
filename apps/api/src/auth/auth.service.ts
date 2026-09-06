@@ -3,6 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import { BonusesService } from "../bonuses/bonuses.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import type { User } from "@bet-platform/database";
 import type { AuthSession, LoginInput, SignUpInput } from "@bet-platform/shared";
 
@@ -12,6 +13,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly bonuses: BonusesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Cadastro simples: nome + e-mail + senha. Sem KYC neste MVP. */
@@ -31,7 +33,14 @@ export class AuthService {
       return created;
     });
 
-    await this.bonuses.grantWelcomeBonus(user.id);
+    const userBonus = await this.bonuses.grantWelcomeBonus(user.id);
+    if (userBonus) {
+      await this.notifications.create(user.id, {
+        type: "BONUS_GRANTED",
+        title: "Bônus de boas-vindas creditado!",
+        body: `R$ ${userBonus.amountGranted.toFixed(2)} já estão na sua carteira — boa sorte.`,
+      });
+    }
 
     return this.buildSession(user);
   }

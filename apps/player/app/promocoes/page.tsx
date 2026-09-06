@@ -1,6 +1,33 @@
+import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppShell } from "@/components/app-shell";
 import { GiftIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+
+const PROMOS = [
+  {
+    title: "Bônus de boas-vindas",
+    description:
+      "Cadastre-se e ganhe até R$100 de bônus para jogar — creditado automaticamente na sua carteira.",
+    tag: "Ativo",
+    art: "from-brand-violet-soft to-surface",
+    cta: { label: "Ver carteira", href: "/carteira" },
+  },
+  {
+    title: "Cashback semanal",
+    description: "Toda segunda-feira, parte do que você perdeu na semana anterior volta como bônus.",
+    tag: "Em breve",
+    art: "from-[#1a2440] to-surface",
+    cta: null,
+  },
+  {
+    title: "Bônus de recarga",
+    description: "Depósitos a partir do segundo ganham um bônus extra sobre o valor depositado.",
+    tag: "Em breve",
+    art: "from-[#3a2a12] to-surface",
+    cta: null,
+  },
+];
 
 export default function PromocoesPage() {
   return (
@@ -8,18 +35,34 @@ export default function PromocoesPage() {
       <AppShell>
         <div className="mx-auto max-w-3xl">
           <h1 className="mb-4 font-display text-xl font-bold">Promoções</h1>
-          <div className="relative overflow-hidden rounded-md border border-border p-6">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_160%_at_100%_0%,rgba(245,180,0,0.18),transparent_60%),linear-gradient(120deg,#241a45,#3a1240)]" />
-            <div className="relative">
-              <GiftIcon className="h-6 w-6 text-brand-gold" />
-              <h2 className="mt-3 font-display text-lg font-bold">Bônus de boas-vindas</h2>
-              <p className="mt-1 max-w-sm text-sm text-ink-muted">
-                Deposite pela primeira vez e ganhe até R$100 de bônus para jogar. O valor é creditado
-                automaticamente no seu cadastro.
-              </p>
-            </div>
+          <div className="flex flex-col gap-4">
+            {PROMOS.map((promo) => (
+              <div
+                key={promo.title}
+                className={`relative overflow-hidden rounded-md border border-border bg-gradient-to-br p-6 ${promo.art}`}
+              >
+                <div className="flex items-start justify-between">
+                  <GiftIcon className="h-6 w-6 text-brand-gold" />
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                      promo.tag === "Ativo" ? "bg-state-green-soft text-state-green" : "bg-surface-3 text-ink-faint"
+                    }`}
+                  >
+                    {promo.tag}
+                  </span>
+                </div>
+                <h2 className="mt-3 font-display text-lg font-bold">{promo.title}</h2>
+                <p className="mt-1 max-w-md text-sm text-ink-muted">{promo.description}</p>
+                {promo.cta && (
+                  <Link href={promo.cta.href} className="mt-4 inline-block">
+                    <Button variant="primary" className="text-xs">
+                      {promo.cta.label}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ))}
           </div>
-          <p className="mt-6 text-sm text-ink-faint">Mais promoções chegam em breve.</p>
         </div>
       </AppShell>
     </ProtectedRoute>
