@@ -1,0 +1,704 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum LedgerEntryType {
+  DEPOSIT
+  BET
+  WIN
+  LOSS
+  REFUND
+  WITHDRAWAL
+  BONUS
+  BONUS_CONVERSION
+  ADMIN_ADJUSTMENT
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+  CANCELLED
+  REFUNDED
+}
+
+enum GameType {
+  SLOTS
+  CRASH
+  MINES
+  PLINKO
+  ROULETTE
+  BLACKJACK
+}
+
+enum GameStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum GameProviderStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum GameRoundStatus {
+  RUNNING
+  SETTLED
+  CANCELLED
+}
+
+enum DepositStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum BonusType {
+  SIGNUP
+  DEPOSIT
+  CASHBACK
+  FREEBET
+}
+
+enum BonusCampaignStatus {
+  ACTIVE
+  INACTIVE
+  SCHEDULED
+  EXPIRED
+}
+
+enum UserBonusStatus {
+  ACTIVE
+  CONSUMED
+  CONVERTED
+  EXPIRED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  IN_APP
+  SMS
+}
+
+// ─────────────────────────────────────────────────────────
+// USERS — cadastro simples: nome + e-mail + senha. Sem KYC.
+// ─────────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  profile       UserProfile?
+  sessions      UserSession[]
+  wallet        Wallet?
+  bets          Bet[]
+  gameSessions  GameSession[]
+  deposits      Deposit[]
+  withdrawals   Withdrawal[]
+  paymentMethods PaymentMethod[]
+  userBonuses   UserBonus[]
+  referral      Referral?       @relation("ReferredUser")
+  affiliate     Affiliate?
+  messages      Message[]
+  notifications Notification[]
+  auditLogs     AuditLog[]      @relation("ActorUserAuditLogs")
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName String?
+  avatarUrl   String?
+  country     String   @default("BR")
+  locale      String   @default("pt-BR")
+  timezone    String   @default("America/Sao_Paulo")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+model UserSession {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  revokedAt        DateTime?
+
+  @@map("user_sessions")
+}
+
+// ─────────────────────────────────────────────────────────
+// WALLET — saldo real / bloqueado / bônus + ledger imutável
+// ─────────────────────────────────────────────────────────
+
+model Wallet {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realBalance    Decimal  @default(0) @db.Decimal(18, 2)
+  blockedBalance Decimal  @default(0) @db.Decimal(18, 2)
+  bonusBalance   Decimal  @default(0) @db.Decimal(18, 2)
+  currency       String   @default("BRL")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  transactions  WalletTransaction[]
+  ledgerEntries LedgerEntry[]
+
+  @@map("wallets")
+}
+
+/// Snapshot de saldo pós-operação, para exibir extrato rápido na Carteira.
+model WalletTransaction {
+  id                  String          @id @default(cuid())
+  walletId            String
+  wallet              Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type                LedgerEntryType
+  amount              Decimal         @db.Decimal(18, 2)
+  balanceAfterReal    Decimal         @db.Decimal(18, 2)
+  balanceAfterBlocked Decimal         @db.Decimal(18, 2)
+  balanceAfterBonus   Decimal         @db.Decimal(18, 2)
+  referenceType       String?
+  referenceId         String?
+  createdAt           DateTime        @default(now())
+
+  @@index([walletId, createdAt])
+  @@map("wallet_transactions")
+}
+
+/// Registro contábil imutável de toda movimentação financeira da plataforma.
+/// Nunca editar saldo sem gerar um LedgerEntry correspondente.
+model LedgerEntry {
+  id            String          @id @default(cuid())
+  walletId      String
+  wallet        Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type          LedgerEntryType
+  amount        Decimal         @db.Decimal(18, 2)
+  description   String?
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime        @default(now())
+
+  @@index([walletId, createdAt])
+  @@map("ledger_entries")
+}
+
+// ─────────────────────────────────────────────────────────
+// BETTING
+// ─────────────────────────────────────────────────────────
+
+model Bet {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id])
+  gameRoundId String?
+  gameRound   GameRound? @relation(fields: [gameRoundId], references: [id])
+  stakeAmount Decimal   @db.Decimal(18, 2)
+  status      BetStatus @default(PENDING)
+  multiplier  Decimal?  @db.Decimal(10, 4)
+  payoutAmount Decimal? @db.Decimal(18, 2)
+  placedAt    DateTime  @default(now())
+  settledAt   DateTime?
+
+  items      BetItem[]
+  settlement Settlement?
+
+  @@index([userId, placedAt])
+  @@map("bets")
+}
+
+/// Seleções da aposta (ex.: célula revelada no Mines, cor na Roulette).
+model BetItem {
+  id        String   @id @default(cuid())
+  betId     String
+  bet       Bet      @relation(fields: [betId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+
+  @@map("bet_items")
+}
+
+model Settlement {
+  id            String    @id @default(cuid())
+  betId         String    @unique
+  bet           Bet       @relation(fields: [betId], references: [id], onDelete: Cascade)
+  outcome       BetStatus
+  payoutAmount  Decimal   @db.Decimal(18, 2)
+  ledgerEntryId String?
+  settledAt     DateTime  @default(now())
+
+  @@map("settlements")
+}
+
+// ─────────────────────────────────────────────────────────
+// GAMES — catálogo próprio + provedores externos
+// ─────────────────────────────────────────────────────────
+
+model GameProvider {
+  id            String             @id @default(cuid())
+  name          String
+  slug          String             @unique
+  apiUrl        String?
+  status        GameProviderStatus @default(ACTIVE)
+  configuration Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  games Game[]
+
+  @@map("game_providers")
+}
+
+model Game {
+  id            String     @id @default(cuid())
+  providerId    String?
+  provider      GameProvider? @relation(fields: [providerId], references: [id])
+  name          String
+  slug          String     @unique
+  type          GameType
+  rtp           Decimal    @default(96.00) @db.Decimal(5, 2)
+  volatility    String     @default("medium")
+  minBet        Decimal    @default(1.00) @db.Decimal(18, 2)
+  maxBet        Decimal    @default(1000.00) @db.Decimal(18, 2)
+  thumbnail     String?
+  status        GameStatus @default(ACTIVE)
+  configuration Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  sessions GameSession[]
+  rounds   GameRound[]
+  bets     Bet[]
+
+  @@map("games")
+}
+
+model GameSession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game      @relation(fields: [gameId], references: [id])
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@map("game_sessions")
+}
+
+/// Uma rodada do Game Engine. serverSeedHash é publicado antes da rodada;
+/// serverSeed só é revelado após o resultado (provably fair).
+model GameRound {
+  id             String          @id @default(cuid())
+  gameId         String
+  game           Game            @relation(fields: [gameId], references: [id])
+  roundNumber    BigInt
+  serverSeed     String
+  serverSeedHash String
+  clientSeed     String?
+  nonce          Int             @default(0)
+  status         GameRoundStatus @default(RUNNING)
+  startedAt      DateTime        @default(now())
+  endedAt        DateTime?
+
+  bets   Bet[]
+  result GameResult?
+
+  @@unique([gameId, roundNumber])
+  @@map("game_rounds")
+}
+
+model GameResult {
+  id          String    @id @default(cuid())
+  gameRoundId String    @unique
+  gameRound   GameRound @relation(fields: [gameRoundId], references: [id], onDelete: Cascade)
+  outcome     Json
+  createdAt   DateTime  @default(now())
+
+  @@map("game_results")
+}
+
+// ─────────────────────────────────────────────────────────
+// PAYMENTS — ambiente de teste usa carteira simulada
+// ─────────────────────────────────────────────────────────
+
+model Deposit {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount          Decimal       @db.Decimal(18, 2)
+  status          DepositStatus @default(PENDING)
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  externalRef     String?
+  /// Split Stone/Pagar.me no momento da cobrança (platformFeeCents, netAmountCents,
+  /// legs de produtor/afiliado) — guardado para conferência e para creditar a
+  /// comissão do afiliado só depois que o webhook confirmar o pagamento.
+  splitMeta       Json?
+  createdAt       DateTime      @default(now())
+  confirmedAt     DateTime?
+
+  events PaymentEvent[]
+
+  @@map("deposits")
+}
+
+model Withdrawal {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount          Decimal          @db.Decimal(18, 2)
+  status          WithdrawalStatus @default(PENDING)
+  paymentMethodId String?
+  paymentMethod   PaymentMethod?   @relation(fields: [paymentMethodId], references: [id])
+  requestedAt     DateTime         @default(now())
+  processedAt     DateTime?
+
+  events PaymentEvent[]
+
+  @@map("withdrawals")
+}
+
+model PaymentMethod {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("mock")
+  label     String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  deposits    Deposit[]
+  withdrawals Withdrawal[]
+
+  @@map("payment_methods")
+}
+
+model PaymentEvent {
+  id           String      @id @default(cuid())
+  depositId    String?
+  deposit      Deposit?    @relation(fields: [depositId], references: [id])
+  withdrawalId String?
+  withdrawal   Withdrawal? @relation(fields: [withdrawalId], references: [id])
+  type         String
+  payload      Json?
+  createdAt    DateTime    @default(now())
+
+  @@map("payment_events")
+}
+
+// ─────────────────────────────────────────────────────────
+// BONUSES
+// ─────────────────────────────────────────────────────────
+
+model BonusCampaign {
+  id              String              @id @default(cuid())
+  name            String
+  type            BonusType           @default(SIGNUP)
+  amount          Decimal             @db.Decimal(18, 2)
+  status          BonusCampaignStatus @default(ACTIVE)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  expirationDays  Int                 @default(7)
+  eligibleGameIds String[]            @default([])
+  rules           Json?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  userBonuses UserBonus[]
+
+  @@map("bonus_campaigns")
+}
+
+model UserBonus {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignId      String
+  campaign        BonusCampaign    @relation(fields: [campaignId], references: [id])
+  amountGranted   Decimal          @db.Decimal(18, 2)
+  amountRemaining Decimal          @db.Decimal(18, 2)
+  status          UserBonusStatus  @default(ACTIVE)
+  grantedAt       DateTime         @default(now())
+  expiresAt       DateTime?
+  convertedAt     DateTime?
+
+  transactions BonusTransaction[]
+
+  @@map("user_bonuses")
+}
+
+model BonusTransaction {
+  id          String    @id @default(cuid())
+  userBonusId String
+  userBonus   UserBonus @relation(fields: [userBonusId], references: [id], onDelete: Cascade)
+  type        String
+  amount      Decimal   @db.Decimal(18, 2)
+  createdAt   DateTime  @default(now())
+
+  @@map("bonus_transactions")
+}
+
+// ─────────────────────────────────────────────────────────
+// AFFILIATES
+// ─────────────────────────────────────────────────────────
+
+model Affiliate {
+  id             String   @id @default(cuid())
+  userId         String?  @unique
+  user           User?    @relation(fields: [userId], references: [id])
+  name           String
+  code           String   @unique
+  commissionRate Decimal  @default(20.00) @db.Decimal(5, 2)
+  status         String   @default("active")
+  /// Recipient (re_...) do afiliado na Stone/Pagar.me — permite pagar a
+  /// comissão via split direto no depósito PIX do indicado, em vez de só
+  /// calcular a partir do GGR depois.
+  pagarmeRecipientId String?
+  createdAt      DateTime @default(now())
+
+  links       AffiliateLink[]
+  referrals   Referral[]
+  commissions Commission[]
+
+  @@map("affiliates")
+}
+
+model AffiliateLink {
+  id             String   @id @default(cuid())
+  affiliateId    String
+  affiliate      Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  slug           String   @unique
+  destinationUrl String
+  clicks         Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@map("affiliate_links")
+}
+
+model Referral {
+  id             String   @id @default(cuid())
+  affiliateId    String
+  affiliate      Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredUserId String   @unique
+  referredUser   User     @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@map("referrals")
+}
+
+model Commission {
+  id          String    @id @default(cuid())
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referralId  String?
+  amount      Decimal   @db.Decimal(18, 2)
+  status      String    @default("pending")
+  periodStart DateTime?
+  periodEnd   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("commissions")
+}
+
+// ─────────────────────────────────────────────────────────
+// CRM
+// ─────────────────────────────────────────────────────────
+
+model Campaign {
+  id          String              @id @default(cuid())
+  name        String
+  channel     NotificationChannel
+  segment     Json?
+  content     Json?
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime            @default(now())
+
+  messages Message[]
+
+  @@map("campaigns")
+}
+
+model Message {
+  id         String              @id @default(cuid())
+  campaignId String?
+  campaign   Campaign?           @relation(fields: [campaignId], references: [id])
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel    NotificationChannel
+  subject    String?
+  body       String
+  status     String              @default("queued")
+  sentAt     DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────────────────
+// ANALYTICS — tabelas de rollup, populadas por job agendado
+// ─────────────────────────────────────────────────────────
+
+model PlayerMetric {
+  id               String   @id @default(cuid())
+  userId           String
+  date             DateTime @db.Date
+  betsCount        Int      @default(0)
+  turnover         Decimal  @default(0) @db.Decimal(18, 2)
+  ggr              Decimal  @default(0) @db.Decimal(18, 2)
+  depositsTotal    Decimal  @default(0) @db.Decimal(18, 2)
+  withdrawalsTotal Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt        DateTime @default(now())
+
+  @@unique([userId, date])
+  @@map("player_metrics")
+}
+
+model GameMetric {
+  id          String   @id @default(cuid())
+  gameId      String
+  date        DateTime @db.Date
+  roundsCount Int      @default(0)
+  betsCount   Int      @default(0)
+  turnover    Decimal  @default(0) @db.Decimal(18, 2)
+  ggr         Decimal  @default(0) @db.Decimal(18, 2)
+  rtpActual   Decimal? @db.Decimal(5, 2)
+  createdAt   DateTime @default(now())
+
+  @@unique([gameId, date])
+  @@map("game_metrics")
+}
+
+model DailyMetric {
+  id               String   @id @default(cuid())
+  date             DateTime @unique @db.Date
+  registeredUsers  Int      @default(0)
+  activeUsers      Int      @default(0)
+  turnover         Decimal  @default(0) @db.Decimal(18, 2)
+  ggr              Decimal  @default(0) @db.Decimal(18, 2)
+  depositsTotal    Decimal  @default(0) @db.Decimal(18, 2)
+  withdrawalsTotal Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt        DateTime @default(now())
+
+  @@map("daily_metrics")
+}
+
+model RevenueMetric {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  ggr       Decimal  @default(0) @db.Decimal(18, 2)
+  ngr       Decimal  @default(0) @db.Decimal(18, 2)
+  bonusCost Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt DateTime @default(now())
+
+  @@map("revenue_metrics")
+}
+
+// ─────────────────────────────────────────────────────────
+// SYSTEM — contas e permissões do Admin
+// ─────────────────────────────────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  roleId       String?
+  role         Role?    @relation(fields: [roleId], references: [id])
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[] @relation("ActorAdminAuditLogs")
+
+  @@map("admin_users")
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  permissions Permission[] @relation("RolePermissions")
+  adminUsers  AdminUser[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  key         String @unique
+  description String?
+  roles       Role[] @relation("RolePermissions")
+
+  @@map("permissions")
+}
+
+model AuditLog {
+  id           String     @id @default(cuid())
+  actorAdminId String?
+  actorAdmin   AdminUser? @relation("ActorAdminAuditLogs", fields: [actorAdminId], references: [id])
+  actorUserId  String?
+  actorUser    User?      @relation("ActorUserAuditLogs", fields: [actorUserId], references: [id])
+  action       String
+  entityType   String?
+  entityId     String?
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

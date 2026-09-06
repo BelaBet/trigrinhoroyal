@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.next/
+.turbo/
+build/
+coverage/
+*.log
+.env
+.env.local
+.DS_Store
+.pnpm-store/
+/apps/*/dist
+/packages/*/dist
+/game-engines/*/dist
