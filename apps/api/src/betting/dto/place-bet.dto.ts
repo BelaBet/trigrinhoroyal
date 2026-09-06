@@ -1,8 +1,8 @@
-import { IsIn, IsNumber, IsObject, IsOptional, Min } from "class-validator";
+import { IsNumber, IsObject, IsOptional, IsString, Min } from "class-validator";
 import type { GameSlug } from "@bet-platform/shared";
 
 export class PlaceBetDto {
-  @IsIn(["crash", "mines", "plinko", "roulette"])
+  @IsString()
   gameSlug!: GameSlug;
 
   @IsNumber()

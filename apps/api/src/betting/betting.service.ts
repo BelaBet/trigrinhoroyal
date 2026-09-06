@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "@bet-platform/database";
+import type { GameType, Prisma } from "@bet-platform/database";
 import { PrismaService } from "../prisma/prisma.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { toWalletBalance } from "../wallet/wallet.mapper";
@@ -11,6 +11,7 @@ import { resolvePlinkoRound, settlePlinkoBet } from "@bet-platform/game-engine-p
 import type { RiskLevel } from "@bet-platform/game-engine-plinko";
 import { resolveRouletteRound, settleRouletteBet } from "@bet-platform/game-engine-roulette";
 import type { RouletteBetType } from "@bet-platform/game-engine-roulette";
+import { resolveSlotsRound, settleSlotsBet } from "@bet-platform/game-engine-slots";
 
 interface EngineOutcome {
   outcome: Record<string, unknown>;
@@ -78,7 +79,7 @@ export class BettingService {
       });
       const roundNumber = (lastRound?.roundNumber ?? 0n) + 1n;
 
-      const engineResult = this.resolveGameOutcome(game.slug as GameSlug, {
+      const engineResult = this.resolveGameOutcome(game.type, {
         serverSeed,
         clientSeed,
         nonce: Number(roundNumber),
@@ -173,7 +174,7 @@ export class BettingService {
   }
 
   private resolveGameOutcome(
-    slug: GameSlug,
+    type: GameType,
     ctx: {
       serverSeed: string;
       clientSeed: string;
@@ -182,8 +183,8 @@ export class BettingService {
       params: Record<string, unknown>;
     },
   ): EngineOutcome {
-    switch (slug) {
-      case "crash": {
+    switch (type) {
+      case "CRASH": {
         const cashoutMultiplier = Number(ctx.params.cashoutMultiplier ?? 1.5);
         const round = resolveCrashRound({
           serverSeed: ctx.serverSeed,
@@ -202,7 +203,7 @@ export class BettingService {
           multiplier: settle.multiplier,
         };
       }
-      case "mines": {
+      case "MINES": {
         const minesCount = Number(ctx.params.minesCount ?? 3);
         const revealedCells = Array.isArray(ctx.params.revealedCells)
           ? (ctx.params.revealedCells as number[])
@@ -226,7 +227,7 @@ export class BettingService {
           multiplier: settle.multiplier,
         };
       }
-      case "plinko": {
+      case "PLINKO": {
         const risk = (ctx.params.risk as RiskLevel) ?? "medium";
         const round = resolvePlinkoRound({
           serverSeed: ctx.serverSeed,
@@ -242,7 +243,7 @@ export class BettingService {
           multiplier: round.multiplier,
         };
       }
-      case "roulette": {
+      case "ROULETTE": {
         const bet = ctx.params.bet as RouletteBetType;
         const round = resolveRouletteRound({
           serverSeed: ctx.serverSeed,
@@ -252,6 +253,20 @@ export class BettingService {
         const settle = settleRouletteBet({ result: round, bet, stakeAmount: ctx.stakeAmount });
         return {
           outcome: { number: round.number, color: round.color, bet },
+          won: settle.won,
+          payoutAmount: settle.payoutAmount,
+          multiplier: settle.multiplier,
+        };
+      }
+      case "SLOTS": {
+        const round = resolveSlotsRound({
+          serverSeed: ctx.serverSeed,
+          clientSeed: ctx.clientSeed,
+          nonce: ctx.nonce,
+        });
+        const settle = settleSlotsBet({ grid: round.grid, stakeAmount: ctx.stakeAmount });
+        return {
+          outcome: { grid: round.grid, wins: settle.wins },
           won: settle.won,
           payoutAmount: settle.payoutAmount,
           multiplier: settle.multiplier,

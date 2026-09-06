@@ -25,6 +25,8 @@ async function main() {
     { name: "Mines", slug: "mines", type: "MINES", rtp: 96.5, minBet: 1, maxBet: 500 },
     { name: "Plinko", slug: "plinko", type: "PLINKO", rtp: 96.0, minBet: 1, maxBet: 500 },
     { name: "Roulette", slug: "roulette", type: "ROULETTE", rtp: 97.3, minBet: 1, maxBet: 1000 },
+    { name: "Fortune Cat", slug: "fortune-cat", type: "SLOTS", rtp: 96.2, minBet: 0.5, maxBet: 200 },
+    { name: "Golden Reels", slug: "golden-reels", type: "SLOTS", rtp: 95.8, minBet: 0.5, maxBet: 200 },
   ];
 
   for (const game of games) {

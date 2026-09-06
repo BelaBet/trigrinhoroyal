@@ -21,6 +21,7 @@
     "@bet-platform/game-engine-mines": "workspace:*",
     "@bet-platform/game-engine-plinko": "workspace:*",
     "@bet-platform/game-engine-roulette": "workspace:*",
+    "@bet-platform/game-engine-slots": "workspace:*",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

@@ -4,7 +4,15 @@
  * infraestrutura de banco para o frontend.
  */
 
-export type GameSlug = "crash" | "mines" | "plinko" | "roulette";
+/**
+ * O slug de um jogo específico (ex.: "crash", "fortune-cat") — não é um
+ * union fechado porque o catálogo de Slots tem vários jogos com slugs
+ * próprios sobre o mesmo motor. A validade real é conferida no backend
+ * pela existência do registro em `games`.
+ */
+export type GameSlug = string;
+
+export type GameCategory = "SLOTS" | "CRASH" | "MINES" | "PLINKO" | "ROULETTE" | "BLACKJACK";
 
 export interface AuthUser {
   id: string;

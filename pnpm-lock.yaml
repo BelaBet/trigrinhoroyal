@@ -69,6 +69,9 @@ importers:
       '@bet-platform/game-engine-roulette':
         specifier: workspace:*
         version: link:../../game-engines/roulette
+      '@bet-platform/game-engine-slots':
+        specifier: workspace:*
+        version: link:../../game-engines/slots
       '@bet-platform/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -227,6 +230,16 @@ importers:
         version: 5.9.3
 
   game-engines/roulette:
+    dependencies:
+      '@bet-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  game-engines/slots:
     dependencies:
       '@bet-platform/shared':
         specifier: workspace:*
