@@ -77,6 +77,41 @@ export const BombIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const SlotIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M3 9h18M8 9v11M16 9v11" />
+    <path d="M9 5.5l1 1.5-1 1.5M15 5.5l1 1.5-1 1.5" />
+  </svg>
+);
+
+export const GiftIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <rect x="3" y="9" width="18" height="11" rx="1.5" />
+    <path d="M3 9h18M12 9v11M12 9c-1.8 0-4-1-4-3.2A2.3 2.3 0 0110.3 3.5C11.6 3.5 12 5.5 12 9zm0 0c1.8 0 4-1 4-3.2A2.3 2.3 0 0013.7 3.5C12.4 3.5 12 5.5 12 9z" />
+  </svg>
+);
+
+export const ChevronDownIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+export const BellIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="M6 8a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
+    <path d="M10 20a2 2 0 004 0" />
+  </svg>
+);
+
+export const SearchIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-4.3-4.3" />
+  </svg>
+);
+
 export const LogoutIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
