@@ -6,8 +6,10 @@ import type {
   GameSummaryDto,
   LedgerEntryDto,
   LoginInput,
+  MinesGameStateDto,
   PlaceBetInput,
   SignUpInput,
+  StartMinesInput,
   WalletBalance,
 } from "@bet-platform/shared";
 
@@ -55,6 +57,16 @@ export const api = {
   placeBet: (token: string, input: PlaceBetInput) =>
     request<BetResultDto>("/bets", { method: "POST", body: JSON.stringify(input) }, token),
   myBets: (token: string) => request<BetHistoryDto[]>("/bets/me", {}, token),
+  minesStart: (token: string, input: StartMinesInput) =>
+    request<MinesGameStateDto>("/games/mines/start", { method: "POST", body: JSON.stringify(input) }, token),
+  minesReveal: (token: string, betId: string, cellIndex: number) =>
+    request<MinesGameStateDto>(
+      `/games/mines/${betId}/reveal`,
+      { method: "POST", body: JSON.stringify({ cellIndex }) },
+      token,
+    ),
+  minesCashout: (token: string, betId: string) =>
+    request<MinesGameStateDto>(`/games/mines/${betId}/cashout`, { method: "POST" }, token),
 };
 
 export { ApiError };

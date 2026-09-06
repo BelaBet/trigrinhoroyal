@@ -70,6 +70,13 @@ export const HomeIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const BombIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <circle cx="11" cy="14" r="7" />
+    <path d="M16 9l2-2M18 3l1.5 1.5M20 5.5L22 4" />
+  </svg>
+);
+
 export const LogoutIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />

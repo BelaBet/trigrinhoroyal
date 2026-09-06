@@ -10,6 +10,7 @@ import { BonusesModule } from "./bonuses/bonuses.module";
 import { GamesModule } from "./games/games.module";
 import { BettingModule } from "./betting/betting.module";
 import { PaymentsModule } from "./payments/payments.module";
+import { MinesModule } from "./mines/mines.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PaymentsModule } from "./payments/payments.module";
     GamesModule,
     BettingModule,
     PaymentsModule,
+    MinesModule,
   ],
   controllers: [AppController],
 })

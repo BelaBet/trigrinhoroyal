@@ -123,13 +123,15 @@ export class BettingService {
         },
       });
 
-      // 4. libera bloqueio e credita prêmio (se houver)
+      // 4. libera bloqueio e credita o payout — mesmo quando "LOST" o Plinko
+      // pode devolver uma fração da aposta (bucket com multiplicador <1x);
+      // payoutAmount já vem 0 dos demais engines numa derrota real.
       await this.ledger.applyMovement(tx, {
         walletId: wallet.id,
         type: engineResult.won ? "WIN" : "LOSS",
-        amount: engineResult.won ? engineResult.payoutAmount : 0,
+        amount: engineResult.payoutAmount,
         blockedDelta: -stake,
-        realDelta: engineResult.won ? engineResult.payoutAmount : 0,
+        realDelta: engineResult.payoutAmount,
         description: engineResult.won ? `Prêmio — ${game.name}` : `Resultado — ${game.name}`,
         referenceType: "bet",
         referenceId: bet.id,

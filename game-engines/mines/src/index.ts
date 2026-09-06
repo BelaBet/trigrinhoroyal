@@ -62,3 +62,5 @@ function round2(value: number): number {
 function round4(value: number): number {
   return Math.round(value * 10000) / 10000;
 }
+
+export { GRID_SIZE };

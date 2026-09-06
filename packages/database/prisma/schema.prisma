@@ -238,6 +238,10 @@ model Bet {
   status      BetStatus @default(PENDING)
   multiplier  Decimal?  @db.Decimal(10, 4)
   payoutAmount Decimal? @db.Decimal(18, 2)
+  /// Estado em progresso de jogos com decisão incremental (ex.: Mines —
+  /// minePositions, revealedCells). Nunca exposto ao cliente enquanto a
+  /// aposta segue PENDING; só o necessário é revelado pelo controller.
+  state       Json?
   placedAt    DateTime  @default(now())
   settledAt   DateTime?
 
