@@ -32,15 +32,18 @@ export function hashToInt(hash: string, max: number, offset = 0): number {
 }
 
 /**
- * Fisher-Yates determinístico: embaralha `items` usando bytes sucessivos do
- * hash como fonte de aleatoriedade (usado pelo Mines para posicionar minas).
+ * Fisher-Yates determinístico: embaralha `items` derivando um sub-hash
+ * (SHA-256) por posição a partir do hash da rodada — cada troca tem sua
+ * própria entropia de 256 bits, então funciona igual bem para 25 células
+ * (Mines) ou um baralho de 52 cartas (Blackjack), sem reaproveitar bytes.
+ * Continua 100% determinístico: o mesmo hash sempre produz o mesmo
+ * embaralhamento, permitindo conferência provably-fair.
  */
 export function seededShuffle<T>(items: T[], hash: string): T[] {
   const result = [...items];
-  let cursor = 0;
   for (let i = result.length - 1; i > 0; i--) {
-    const j = hashToInt(hash, i + 1, (cursor * 8) % (hash.length - 8));
-    cursor++;
+    const subHash = createHash("sha256").update(`${hash}:${i}`).digest("hex");
+    const j = hashToInt(subHash, i + 1);
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;

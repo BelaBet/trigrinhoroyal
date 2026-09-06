@@ -77,6 +77,13 @@ export const BombIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const CardsIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <rect x="7" y="3" width="12" height="16" rx="2" transform="rotate(8 13 11)" />
+    <rect x="5" y="6" width="12" height="16" rx="2" fill="none" />
+  </svg>
+);
+
 export const SlotIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <rect x="3" y="4" width="18" height="16" rx="2" />

@@ -80,7 +80,7 @@ export interface PlaceBetInput {
 
 export interface BetResultDto {
   betId: string;
-  status: "WON" | "LOST";
+  status: "WON" | "LOST" | "PUSH";
   stakeAmount: string;
   payoutAmount: string;
   multiplier: string | null;
@@ -97,7 +97,7 @@ export interface BetHistoryDto {
   gameName: string;
   stakeAmount: string;
   payoutAmount: string;
-  status: "WON" | "LOST";
+  status: "WON" | "LOST" | "PUSH";
   placedAt: string;
 }
 
@@ -133,6 +133,36 @@ export interface MinesGameStateDto {
   potentialPayout: string;
   /** Só presente quando status !== PENDING (fim de jogo). */
   minePositions?: number[];
+  payoutAmount?: string;
+  wallet?: WalletBalance;
+  serverSeedHash: string;
+}
+
+/**
+ * Blackjack também tem fluxo próprio (start -> hit, double ou stand), já
+ * que o jogador decide ação a ação contra o dealer. Sem split nesta versão.
+ */
+export interface PlayingCard {
+  rank: "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K";
+  suit: "♠" | "♥" | "♦" | "♣";
+}
+
+export interface StartBlackjackInput {
+  stakeAmount: number;
+}
+
+export interface BlackjackGameStateDto {
+  betId: string;
+  roundId: string;
+  stakeAmount: string;
+  playerCards: PlayingCard[];
+  playerTotal: number;
+  /** Carta do dealer virada pra baixo não entra aqui enquanto status === PENDING. */
+  dealerCards: PlayingCard[];
+  dealerTotal: number | null;
+  status: "PENDING" | "WON" | "LOST" | "PUSH";
+  canHit: boolean;
+  canDouble: boolean;
   payoutAmount?: string;
   wallet?: WalletBalance;
   serverSeedHash: string;

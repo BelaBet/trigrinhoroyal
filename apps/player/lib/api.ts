@@ -3,12 +3,14 @@ import type {
   AuthUser,
   BetHistoryDto,
   BetResultDto,
+  BlackjackGameStateDto,
   GameSummaryDto,
   LedgerEntryDto,
   LoginInput,
   MinesGameStateDto,
   PlaceBetInput,
   SignUpInput,
+  StartBlackjackInput,
   StartMinesInput,
   WalletBalance,
 } from "@bet-platform/shared";
@@ -67,6 +69,10 @@ export const api = {
     ),
   minesCashout: (token: string, betId: string) =>
     request<MinesGameStateDto>(`/games/mines/${betId}/cashout`, { method: "POST" }, token),
+  blackjackStart: (token: string, input: StartBlackjackInput) =>
+    request<BlackjackGameStateDto>("/games/blackjack/start", { method: "POST", body: JSON.stringify(input) }, token),
+  blackjackAction: (token: string, betId: string, action: "hit" | "double" | "stand") =>
+    request<BlackjackGameStateDto>(`/games/blackjack/${betId}/${action}`, { method: "POST" }, token),
 };
 
 export { ApiError };

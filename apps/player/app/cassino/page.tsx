@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppShell } from "@/components/app-shell";
-import { CirclesIcon, GemIcon, RocketIcon, SlotIcon, WheelIcon } from "@/components/icons";
+import { CardsIcon, CirclesIcon, GemIcon, RocketIcon, SlotIcon, WheelIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import type { GameSummaryDto } from "@bet-platform/shared";
 
@@ -14,6 +14,7 @@ const CATEGORY_ICON: Record<string, typeof RocketIcon> = {
   MINES: GemIcon,
   PLINKO: CirclesIcon,
   ROULETTE: WheelIcon,
+  BLACKJACK: CardsIcon,
 };
 
 const CATEGORY_ART: Record<string, string> = {
@@ -22,6 +23,7 @@ const CATEGORY_ART: Record<string, string> = {
   MINES: "from-[#122d1e] to-[#0f3d2e]",
   PLINKO: "from-[#241a45] to-[#4c1d95]",
   ROULETTE: "from-[#3a0f16] to-[#7a1224]",
+  BLACKJACK: "from-[#0f2a1c] to-[#1a4a2e]",
 };
 
 const CATEGORIES = [
@@ -31,6 +33,7 @@ const CATEGORIES = [
   { value: "MINES", label: "Mines" },
   { value: "PLINKO", label: "Plinko" },
   { value: "ROULETTE", label: "Roleta" },
+  { value: "BLACKJACK", label: "Blackjack" },
 ];
 
 function gameHref(game: GameSummaryDto): string {

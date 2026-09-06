@@ -57,6 +57,9 @@ importers:
       '@bet-platform/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@bet-platform/game-engine-blackjack':
+        specifier: workspace:*
+        version: link:../../game-engines/blackjack
       '@bet-platform/game-engine-crash':
         specifier: workspace:*
         version: link:../../game-engines/crash
@@ -195,6 +198,16 @@ importers:
       tailwindcss:
         specifier: ^3.4.14
         version: 3.4.19(tsx@4.23.13)
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  game-engines/blackjack:
+    dependencies:
+      '@bet-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3

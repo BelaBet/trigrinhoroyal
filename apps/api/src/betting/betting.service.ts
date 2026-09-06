@@ -156,7 +156,7 @@ export class BettingService {
 
   async listMyBets(userId: string, limit = 30): Promise<BetHistoryDto[]> {
     const bets = await this.prisma.bet.findMany({
-      where: { userId, status: { in: ["WON", "LOST"] } },
+      where: { userId, status: { in: ["WON", "LOST", "PUSH"] } },
       include: { game: true },
       orderBy: { placedAt: "desc" },
       take: limit,
@@ -168,7 +168,7 @@ export class BettingService {
       gameName: bet.game.name,
       stakeAmount: bet.stakeAmount.toFixed(2),
       payoutAmount: (bet.payoutAmount ?? 0).toFixed(2),
-      status: bet.status as "WON" | "LOST",
+      status: bet.status as "WON" | "LOST" | "PUSH",
       placedAt: bet.placedAt.toISOString(),
     }));
   }

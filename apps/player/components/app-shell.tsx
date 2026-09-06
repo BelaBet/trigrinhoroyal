@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useWallet } from "@/lib/wallet-context";
 import {
+  CardsIcon,
   ChevronDownIcon,
   CirclesIcon,
   CrownIcon,
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/jogos/mines", label: "Mines", icon: GemIcon },
   { href: "/jogos/plinko", label: "Plinko", icon: CirclesIcon },
   { href: "/jogos/roulette", label: "Roleta", icon: WheelIcon },
+  { href: "/jogos/blackjack", label: "Blackjack", icon: CardsIcon },
   { href: "/promocoes", label: "Promoções", icon: GiftIcon },
 ];
 
