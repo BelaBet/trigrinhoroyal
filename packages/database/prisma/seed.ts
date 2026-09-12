@@ -1,6 +1,11 @@
 import { PrismaClient, GameType } from "@prisma/client";
+import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+const DEMO_EMAIL = "demo@betcore.app";
+const DEMO_PASSWORD = "Demo@1234";
+const DEMO_BALANCE = 500;
 
 async function main() {
   const originals = await prisma.gameProvider.upsert({
@@ -60,7 +65,42 @@ async function main() {
     },
   });
 
-  console.log("Seed concluído: provedor, catálogo de jogos e bônus de boas-vindas.");
+  const existingDemo = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
+  if (!existingDemo) {
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+    const demoUser = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: { name: "Jogador Demo", email: DEMO_EMAIL, passwordHash },
+      });
+      await tx.userProfile.create({ data: { userId: created.id } });
+      const wallet = await tx.wallet.create({
+        data: { userId: created.id, realBalance: DEMO_BALANCE },
+      });
+      await tx.ledgerEntry.create({
+        data: {
+          walletId: wallet.id,
+          type: "ADMIN_ADJUSTMENT",
+          amount: DEMO_BALANCE,
+          description: "Saldo inicial de demonstração",
+        },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: "ADMIN_ADJUSTMENT",
+          amount: DEMO_BALANCE,
+          balanceAfterReal: DEMO_BALANCE,
+          balanceAfterBlocked: 0,
+          balanceAfterBonus: 0,
+          referenceType: "seed",
+        },
+      });
+      return created;
+    });
+    console.log(`Usuário demo criado: ${demoUser.email}`);
+  }
+
+  console.log("Seed concluído: provedor, catálogo de jogos, bônus de boas-vindas e conta demo.");
 }
 
 main()
